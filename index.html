@@ -1,0 +1,767 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { 
+  Shield, Wand2, Sword, Heart, Zap, Coins, 
+  Package, ShoppingCart, Map, ChevronRight, 
+  Plus, Terminal, X, User, Activity, Trophy,
+  Flame, ShieldAlert, Sparkles, Skull, Castle,
+  Hammer, ChevronUp, Crown, Star, Ghost,
+  Target, Swords, Gem, RefreshCw, BookOpen, Settings2,
+  Info, Brain, Move, LifeBuoy, FlameKindling,
+  FlaskConical, ScrollText, Binary, Minus, ChevronDown,
+  Eye, Library, ShoppingBag, ZapOff, Rocket, Clock,
+  Tornado, CloudLightning, Waves, Anchor, Sun, Moon,
+  Wind, Mountain, Crosshair, EyeOff, UserSquare2, RotateCcw,
+  Axe, ShieldCheck, History
+} from 'lucide-react';
+
+const App = () => {
+  // --- 데이터 정의 ---
+  const GRADES = {
+    COMMON: { name: '일반', color: 'text-zinc-400', border: 'border-zinc-800' },
+    RARE: { name: '희귀', color: 'text-blue-400', border: 'border-blue-900' },
+    EPIC: { name: '에픽', color: 'text-purple-400', border: 'border-purple-900' },
+    LEGENDARY: { name: '전설', color: 'text-orange-500', border: 'border-orange-800' },
+    MYTHIC: { name: '신화', color: 'text-rose-500', border: 'border-rose-700 animate-pulse' }
+  };
+
+  const ACC_POOL = [
+    { id: 'acc_1', name: '초보자의 반지', type: 'acc', stat: 'str', val: 5, price: 500 },
+    { id: 'acc_2', name: '마력의 목걸이', type: 'acc', stat: 'int', val: 5, price: 500 },
+    { id: 'acc_3', name: '바람의 귀걸이', type: 'acc', stat: 'dex', val: 5, price: 500 },
+    { id: 'acc_4', name: '생명의 부적', type: 'acc', stat: 'vit', val: 5, price: 500 },
+    { id: 'acc_5', name: '티탄의 벨트', type: 'acc', stat: 'str', val: 50, price: 15000 },
+    { id: 'acc_6', name: '현자의 눈', type: 'acc', stat: 'int', val: 50, price: 15000 },
+    { id: 'acc_7', name: '심연의 인장', type: 'acc', stat: 'all', val: 30, price: 30000 },
+    { id: 'acc_8', name: '드래곤의 심장', type: 'acc', stat: 'all', val: 100, price: 100000 }
+  ];
+
+  const CONSUMABLES_BASE = [
+    { id: 'p_hp', name: '하급 생명 포션', type: 'HP', val: 50, price: 100, desc: 'HP 50 회복' },
+    { id: 'p_mp', name: '하급 마나 포션', type: 'MP', val: 30, price: 100, desc: 'MP 30 회복' },
+    { id: 'p_hp_lg', name: '고급 생명 포션', type: 'HP', val: 500, price: 800, desc: 'HP 500 회복' },
+    { id: 'p_mp_lg', name: '고급 마나 포션', type: 'MP', val: 300, price: 800, desc: 'MP 300 회복' }
+  ];
+
+  const ALL_SKILLS = {
+    Warrior: [
+      { id: 'w1', name: '강격', dmg: 1.5, cost: 10, price: 500 },
+      { id: 'w2', name: '회전베기', dmg: 2.2, cost: 20, price: 1500 },
+      { id: 'w3', name: '용격', dmg: 3.5, cost: 40, price: 5000 },
+      { id: 'w4', name: '대지강타', dmg: 5.0, cost: 70, price: 12000 },
+      { id: 'w5', name: '심판의 빛', dmg: 8.0, cost: 110, price: 30000 },
+      { id: 'w6', name: '참수', dmg: 12.0, cost: 160, price: 70000 },
+      { id: 'w7', name: '전신의 일격', dmg: 20.0, cost: 250, price: 150000 },
+      { id: 'w8', name: '차원참', dmg: 40.0, cost: 400, price: 500000 }
+    ],
+    Mage: [
+      { id: 'm1', name: '파이어볼', dmg: 1.7, cost: 15, price: 500 },
+      { id: 'm2', name: '아이스 스피어', dmg: 2.5, cost: 25, price: 1500 },
+      { id: 'm3', name: '썬더볼트', dmg: 4.0, cost: 45, price: 5000 },
+      { id: 'm4', name: '토네이도', dmg: 6.0, cost: 80, price: 12000 },
+      { id: 'm5', name: '메테오', dmg: 10.0, cost: 130, price: 30000 },
+      { id: 'm6', name: '다크 매터', dmg: 15.0, cost: 200, price: 70000 },
+      { id: 'm7', name: '차원 폭발', dmg: 25.0, cost: 300, price: 150000 },
+      { id: 'm8', name: '코스믹 노바', dmg: 50.0, cost: 500, price: 500000 }
+    ]
+  };
+
+  const AREAS = [
+    { id: 'f1', name: '고블린 주둔지', minLv: 1, boss: { name: '고블린 킹', hp: 1200, atk: 50 }, monsters: [{name: '새끼 고블린', hp: 100, atk: 12}, {name: '고블린 투사', hp: 180, atk: 20}] },
+    { id: 'f2', name: '망령의 숲', minLv: 15, boss: { name: '데스 나이트', hp: 8000, atk: 250 }, monsters: [{name: '숲 좀비', hp: 1200, atk: 90}, {name: '그림자 망령', hp: 1800, atk: 130}] },
+    { id: 'f3', name: '심연의 동굴', minLv: 40, boss: { name: '베히모스', hp: 50000, atk: 1200 }, monsters: [{name: '바위 거미', hp: 8000, atk: 450}, {name: '트럴', hp: 12000, atk: 600}] },
+    { id: 'f4', name: '지옥의 성채', minLv: 70, boss: { name: '발록', hp: 250000, atk: 4500 }, monsters: [{name: '지옥견', hp: 45000, atk: 1800}, {name: '서큐버스', hp: 60000, atk: 2200}] }
+  ];
+
+  const RAIDS = [
+    { id: 'r1', name: '고대 드래곤의 둥지', minLv: 50, boss: { name: '고대 레드 드래곤', hp: 1000000, atk: 3500 }, reward: 100000, type: 'RAID' },
+    { id: 'r2', name: '공포의 리치성', minLv: 85, boss: { name: '리치 킹 아서스', hp: 5000000, atk: 12000 }, reward: 500000, type: 'RAID' },
+    { id: 'r3', name: '신계의 입구', minLv: 120, boss: { name: '타락한 창조주', hp: 25000000, atk: 50000 }, reward: 2000000, type: 'RAID' }
+  ];
+
+  // --- 상태 관리 ---
+  const [gameState, setGameState] = useState('START');
+  const [activeTab, setActiveTab] = useState('MAIN'); 
+  const [shopCategory, setShopCategory] = useState('WEAPON');
+  const [adminVisible, setAdminVisible] = useState(false);
+  const [clickCount, setClickCount] = useState(0);
+
+  const [character, setCharacter] = useState({
+    name: 'HERO', class: '', level: 1, exp: 0, maxExp: 100,
+    hp: 100, mp: 50, gold: 1000, sp: 0,
+    stats: { str: 5, int: 5, dex: 5, vit: 5 },
+    resetCount: 0,
+    rebirthCount: 0,
+    equipment: { weapon: null, accessory: null },
+    inventory: [],
+    consumables: { p_hp: 5, p_mp: 5, p_hp_lg: 0, p_mp_lg: 0 },
+    skills: [],
+    equippedSkills: [null, null, null, null],
+    bestiary: {} 
+  });
+
+  const derivedStats = useMemo(() => {
+    const accBonus = character.equipment.accessory ? character.equipment.accessory.val : 0;
+    const accStat = character.equipment.accessory?.stat;
+    
+    const getStat = (key) => {
+        let base = character.stats[key];
+        if (accStat === key || accStat === 'all') base += accBonus;
+        return base;
+    };
+
+    const str = getStat('str');
+    const int = getStat('int');
+    const vit = getStat('vit');
+
+    return {
+        maxHp: 100 + (vit * 20) + (character.level * 10),
+        maxMp: 50 + (int * 15) + (character.level * 5),
+        atk: (character.class === 'Warrior' ? str : int) * 10 + (character.equipment.weapon?.val || 0) + (character.level * 5),
+        def: vit * 2,
+        cp: (character.stats.str + character.stats.int + character.stats.dex + character.stats.vit) * 10 + (character.level * 50) + (character.equipment.weapon?.val || 0),
+        resetCost: Math.floor(1000 * Math.pow(1.5, character.resetCount))
+    };
+  }, [character]);
+
+  const [shopWeapons, setShopWeapons] = useState([]);
+  const [shopGeneral, setShopGeneral] = useState([]);
+  const [nextReset, setNextReset] = useState(Date.now() + 30000);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [currentArea, setCurrentArea] = useState(null);
+  const [dungeonProgress, setDungeonProgress] = useState(0); 
+  const [enemy, setEnemy] = useState(null);
+  const [logs, setLogs] = useState([]); 
+  const [combatLogs, setCombatLogs] = useState([]); 
+  const [permanentHistory, setPermanentHistory] = useState([]); 
+
+  const addLog = useCallback((text, type = 'info') => {
+    setLogs(prev => [{ text, type, id: Date.now() + Math.random() }, ...prev].slice(0, 10));
+  }, []);
+
+  const addCombatLog = useCallback((text, color = 'text-white') => {
+    const id = Date.now() + Math.random();
+    setCombatLogs(prev => [{ text, color, id }, ...prev].slice(0, 5));
+    setTimeout(() => {
+        setCombatLogs(prev => prev.filter(l => l.id !== id));
+    }, 1500);
+  }, []);
+
+  // --- 환생 기능 구현 ---
+  const handleRebirth = () => {
+    if (character.level < 200) return;
+    
+    // 골드만 남기고 모두 초기화
+    setCharacter(prev => ({
+      ...prev,
+      class: '',
+      level: 1,
+      exp: 0,
+      maxExp: 100,
+      hp: 100,
+      mp: 50,
+      sp: 0,
+      stats: { str: 5, int: 5, dex: 5, vit: 5 },
+      resetCount: 0,
+      rebirthCount: prev.rebirthCount + 1,
+      equipment: { weapon: null, accessory: null },
+      inventory: [],
+      consumables: { p_hp: 5, p_mp: 5, p_hp_lg: 0, p_mp_lg: 0 },
+      skills: [],
+      equippedSkills: [null, null, null, null],
+      // bestiary(도감)는 유지하도록 설정 (일반적인 게임 기획상)
+    }));
+    
+    setGameState('START'); // 다시 직업 선택 화면으로
+    addLog("축하합니다! 환생을 완료했습니다.", "success");
+  };
+
+  const generateWeapon = useCallback((grade, charClass) => {
+    const prefixes = ['부서진', '날카로운', '빛나는', '고대인의', '파괴적인', '전설의', '신의'];
+    const warriorNames = ['대검', '도끼', '망치', '창', '블레이드'];
+    const mageNames = ['지팡이', '오브', '마법서', '완드', '아티팩트'];
+    const names = charClass === 'Warrior' ? warriorNames : mageNames;
+    const powerMap = { COMMON: 20, RARE: 100, EPIC: 400, LEGENDARY: 1500, MYTHIC: 8000 };
+    return {
+      id: Math.random().toString(36).substr(2, 9),
+      name: `${prefixes[Math.floor(Math.random()*prefixes.length)]} ${names[Math.floor(Math.random()*names.length)]}`,
+      grade, val: Math.floor(powerMap[grade] * (0.8 + Math.random() * 0.4)),
+      price: powerMap[grade] * 15, type: 'weapon'
+    };
+  }, []);
+
+  const refreshShop = useCallback(() => {
+    const weapons = [];
+    for(let i=0; i<4; i++) {
+        const roll = Math.random();
+        const grade = roll > 0.99 ? 'MYTHIC' : roll > 0.92 ? 'LEGENDARY' : roll > 0.75 ? 'EPIC' : roll > 0.45 ? 'RARE' : 'COMMON';
+        weapons.push(generateWeapon(grade, character.class || 'Warrior'));
+    }
+    setShopWeapons(weapons);
+
+    const items = [...CONSUMABLES_BASE];
+    const accCount = 3;
+    for(let i=0; i<accCount; i++) {
+        items.push(ACC_POOL[Math.floor(Math.random()*ACC_POOL.length)]);
+    }
+    setShopGeneral(items);
+
+    setNextReset(Date.now() + 30000);
+  }, [character.class, generateWeapon]);
+
+  useEffect(() => {
+    if (gameState === 'TOWN' && shopWeapons.length === 0) refreshShop();
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.ceil((nextReset - now) / 1000));
+      setTimeLeft(diff);
+      
+      if (now >= nextReset && gameState === 'TOWN') {
+        refreshShop();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [gameState, nextReset, shopWeapons.length, refreshShop]);
+
+  const handleAdminClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    if (newCount >= 5) {
+      setAdminVisible(true);
+      addLog("ADMIN UNLOCKED", "warning");
+      setClickCount(0);
+    }
+  };
+
+  const usePotion = (id) => {
+    const item = CONSUMABLES_BASE.find(c => c.id === id);
+    if (character.consumables[id] <= 0) return;
+    setCharacter(prev => {
+        const typeKey = item.type === 'HP' ? 'hp' : 'mp';
+        const maxKey = item.type === 'HP' ? 'maxHp' : 'maxMp';
+        return {
+            ...prev,
+            [typeKey]: Math.min(derivedStats[maxKey], prev[typeKey] + item.val),
+            consumables: { ...prev.consumables, [id]: prev.consumables[id] - 1 }
+        };
+    });
+    addCombatLog(`${item.name} 사용!`, 'text-emerald-400');
+  };
+
+  const resetStats = () => {
+    if (character.gold < derivedStats.resetCost) {
+        addLog("골드가 부족합니다!", "error");
+        return;
+    }
+    setCharacter(prev => {
+        const investedSP = (prev.stats.str - 5) + (prev.stats.int - 5) + (prev.stats.dex - 5) + (prev.stats.vit - 5);
+        return {
+            ...prev,
+            gold: prev.gold - derivedStats.resetCost,
+            sp: prev.sp + investedSP,
+            stats: { str: 5, int: 5, dex: 5, vit: 5 },
+            resetCount: prev.resetCount + 1,
+            hp: derivedStats.maxHp,
+            mp: derivedStats.maxMp
+        };
+    });
+    addLog("스탯 초기화 완료", "warning");
+  };
+
+  const buySkill = (skill) => {
+    if (character.gold < skill.price) {
+        addLog("골드가 부족합니다!", "error");
+        return;
+    }
+    if (character.skills.find(s => s.id === skill.id)) {
+        addLog("이미 배운 스킬입니다.", "error");
+        return;
+    }
+    setCharacter(prev => ({
+        ...prev,
+        gold: prev.gold - skill.price,
+        skills: [...prev.skills, skill]
+    }));
+    addLog(`${skill.name} 학습 완료!`, "success");
+  };
+
+  const handleRetreat = () => {
+    setGameState('TOWN');
+    setEnemy(null);
+    setDungeonProgress(0); 
+    addLog("마을로 후퇴했습니다.", "info");
+  };
+
+  const handleCombat = (skillIdx = -1) => {
+    if (!enemy) return;
+    let skill = skillIdx !== -1 ? character.equippedSkills[skillIdx] : null;
+    if (skill && character.mp < skill.cost) return;
+
+    let damage = Math.floor(derivedStats.atk * (skill ? skill.dmg : 1) * (0.9 + Math.random() * 0.2));
+    const nextEnemyHp = Math.max(0, enemy.hp - damage);
+    addCombatLog(`-${damage.toLocaleString()}`, 'text-white font-black text-xl');
+
+    if (nextEnemyHp <= 0) {
+        const expGain = Math.floor(enemy.maxHp * 0.6);
+        const goldGain = Math.floor(enemy.maxHp * 0.4);
+        const isRaid = currentArea?.type === 'RAID';
+        
+        setCharacter(prev => {
+            let nextExp = prev.exp + expGain;
+            let nextLv = prev.level;
+            let nextMaxExp = prev.maxExp;
+            let nextSp = prev.sp;
+            while(nextExp >= nextMaxExp) {
+                nextExp -= nextMaxExp;
+                nextLv++;
+                nextSp += 5;
+                nextMaxExp = Math.floor(nextMaxExp * 1.6);
+                addLog(`LV UP! [${nextLv}]`, "warning");
+            }
+            return {
+                ...prev, level: nextLv, exp: nextExp, maxExp: nextMaxExp, sp: nextSp,
+                gold: prev.gold + goldGain + (isRaid ? currentArea.reward : 0),
+                bestiary: { ...prev.bestiary, [enemy.name]: (prev.bestiary[enemy.name] || 0) + 1 }
+            };
+        });
+
+        if (enemy.isBoss || isRaid) {
+            setGameState('TOWN');
+            setEnemy(null);
+            setDungeonProgress(0);
+            addLog(`${enemy.name} 처치!`, "success");
+        } else {
+            const nextProg = dungeonProgress + 1;
+            setDungeonProgress(nextProg);
+            if (nextProg >= 10) {
+                setEnemy({ ...currentArea.boss, maxHp: currentArea.boss.hp, isBoss: true });
+                addLog("보스 출현!", "error");
+            } else {
+                const m = currentArea.monsters[Math.floor(Math.random()*currentArea.monsters.length)];
+                setEnemy({...m, maxHp: m.hp, isBoss: false});
+            }
+        }
+        return;
+    }
+
+    const enemyAtk = Math.max(1, enemy.atk - derivedStats.def);
+    const nextPlayerHp = Math.max(0, character.hp - enemyAtk);
+    addCombatLog(`피해: ${enemyAtk}`, 'text-rose-500');
+    
+    setEnemy(prev => ({ ...prev, hp: nextEnemyHp }));
+    setCharacter(prev => ({ ...prev, hp: nextPlayerHp, mp: skill ? prev.mp - skill.cost : prev.mp }));
+
+    if (nextPlayerHp <= 0) {
+        setGameState('TOWN');
+        setEnemy(null);
+        setDungeonProgress(0);
+        addLog("전투 불능...", "error");
+        setCharacter(prev => ({ ...prev, hp: derivedStats.maxHp, gold: Math.floor(prev.gold * 0.7) }));
+    }
+  };
+
+  const ProgressBar = ({ label, val, max, color, height="h-1.5" }) => (
+    <div className="w-full">
+      <div className="flex justify-between items-center text-[8px] font-bold mb-0.5 opacity-80">
+        <div className="flex items-center gap-1 uppercase tracking-tighter">{label}</div>
+        <div>{Math.floor(val).toLocaleString()}</div>
+      </div>
+      <div className={`${height} bg-zinc-900 rounded-full border border-zinc-800/50 overflow-hidden`}>
+        <div className={`h-full ${color} transition-all duration-300 shadow-[0_0_8px_rgba(255,255,255,0.1)]`} style={{ width: `${Math.min(100, (val/max)*100)}%` }} />
+      </div>
+    </div>
+  );
+
+  const bestiaryData = useMemo(() => {
+    return [...AREAS, ...RAIDS].flatMap(a => {
+        const list = [];
+        if (a.monsters) list.push(...a.monsters);
+        if (a.boss) list.push(a.boss);
+        return list;
+    });
+  }, []);
+
+  return (
+    <div className="h-screen bg-[#050505] text-zinc-300 font-sans flex flex-col items-center overflow-hidden">
+      <div className="w-full max-w-md h-full flex flex-col p-3 relative">
+        
+        {/* 시작 화면 (직업 선택) */}
+        {gameState === 'START' && (
+          <div className="absolute inset-0 z-[200] bg-black flex flex-col items-center justify-center p-6 text-center">
+            <div className="mb-2 p-4 bg-zinc-900 border border-zinc-800 rounded-3xl text-orange-500 animate-bounce">
+                <Crown size={48}/>
+            </div>
+            <h1 className="text-4xl font-black text-white italic tracking-tighter mb-2 leading-none uppercase">Dragon<br/>Nest</h1>
+            <p className="text-[10px] text-zinc-500 mb-2 uppercase tracking-widest font-bold">Retro Fantasy RPG</p>
+            {character.rebirthCount > 0 && (
+              <p className="text-[10px] text-orange-500 mb-8 font-black animate-pulse uppercase tracking-wider">REBIRTH LEVEL: {character.rebirthCount}</p>
+            )}
+            <div className="w-full space-y-3">
+              <button onClick={() => { setCharacter(p => ({...p, class: 'Warrior', skills: [ALL_SKILLS.Warrior[0]], hp: 200, mp: 125})); setGameState('TOWN'); }} className="w-full p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:bg-zinc-800 transition-all">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-950/30 rounded-xl text-orange-500"><Sword size={24}/></div>
+                    <div className="text-left text-white font-bold">전사 <span className="block text-[10px] text-zinc-500 font-normal italic">STR BASED</span></div>
+                </div>
+                <ChevronRight size={16}/>
+              </button>
+              <button onClick={() => { setCharacter(p => ({...p, class: 'Mage', skills: [ALL_SKILLS.Mage[0]], hp: 200, mp: 125})); setGameState('TOWN'); }} className="w-full p-4 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:bg-zinc-800 transition-all">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-950/30 rounded-xl text-purple-500"><Wand2 size={24}/></div>
+                    <div className="text-left text-white font-bold">마법사 <span className="block text-[10px] text-zinc-500 font-normal italic">INT BASED</span></div>
+                </div>
+                <ChevronRight size={16}/>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 상단 헤더 */}
+        {gameState !== 'START' && (
+          <div className="flex justify-between items-center mb-2 px-1 flex-shrink-0">
+            <div className="flex items-center gap-2 cursor-pointer select-none active:scale-95" onClick={handleAdminClick}>
+              <div className="text-[10px] font-black text-zinc-600 italic">LV</div>
+              <div className="text-2xl font-black italic text-white leading-none">{character.level}</div>
+              {character.rebirthCount > 0 && <div className="ml-1 text-[8px] font-black text-orange-500 px-1 border border-orange-500/30 rounded">R {character.rebirthCount}</div>}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-yellow-500 font-black text-xs italic">
+                <Coins size={12}/> {character.gold.toLocaleString()}
+              </div>
+              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">
+                CP {derivedStats.cp.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 메인 캔버스 */}
+        {gameState !== 'START' && (
+          <div className="flex-1 flex flex-col min-h-0 bg-zinc-900/10 rounded-[2rem] border border-zinc-800/40 overflow-hidden relative backdrop-blur-sm">
+            
+            {gameState === 'TOWN' && (
+              <div className="flex-1 flex flex-col min-h-0 p-3">
+                <div className="flex gap-1 mb-3 overflow-x-auto pb-2 scrollbar-hide flex-shrink-0">
+                  {[
+                    {id: 'MAIN', icon: <Map size={10}/>, label: '모험'},
+                    {id: 'INV', icon: <Package size={10}/>, label: '장비'},
+                    {id: 'SHOP', icon: <ShoppingCart size={10}/>, label: '상점'},
+                    {id: 'SKILL', icon: <Star size={10}/>, label: '스킬'},
+                    {id: 'LIB', icon: <Library size={10}/>, label: '도감'}
+                  ].map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1 whitespace-nowrap text-[9px] font-black transition-all ${activeTab === tab.id ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-500 border border-zinc-800/50'}`}>
+                      {tab.icon} {tab.label}
+                    </button>
+                  ))}
+                  {adminVisible && <button onClick={() => setActiveTab('ADMIN')} className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black flex items-center gap-1 transition-all ${activeTab === 'ADMIN' ? 'bg-rose-600 text-white' : 'bg-zinc-900 text-rose-500 border border-rose-900/30'}`}><Rocket size={10}/> ADM</button>}
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-20">
+                  {activeTab === 'MAIN' && (
+                    <div className="space-y-2">
+                      {/* 환생 기능 (200레벨 이상일 때만 표시) */}
+                      {character.level >= 200 && (
+                        <div className="mb-4 p-4 bg-orange-500/10 border-2 border-orange-500/40 rounded-2xl flex flex-col items-center text-center">
+                          <Crown className="text-orange-500 mb-2" size={32} />
+                          <div className="font-black text-orange-500 text-lg italic tracking-tighter uppercase leading-none">Limit Reached!</div>
+                          <p className="text-[10px] text-zinc-400 mt-1 mb-4 uppercase font-bold tracking-widest">새로운 힘을 얻기 위해 환생하시겠습니까?<br/>(골드를 제외한 모든 정보가 초기화됩니다)</p>
+                          <button onClick={handleRebirth} className="w-full py-3 bg-orange-500 text-black font-black italic rounded-xl active:scale-95 transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)]">REBIRTH</button>
+                        </div>
+                      )}
+
+                      <div className="text-[8px] font-bold text-zinc-600 uppercase mb-1 flex items-center gap-1">Dungeons</div>
+                      {AREAS.map(a => (
+                        <button key={a.id} disabled={character.level < a.minLv} onClick={() => { setCurrentArea(a); setDungeonProgress(0); setEnemy({...a.monsters[0], maxHp: a.monsters[0].hp, isBoss: false}); setGameState('BATTLE'); }} className={`w-full p-3 rounded-xl border transition-all flex justify-between items-center ${character.level < a.minLv ? 'opacity-30 bg-zinc-950 border-transparent' : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-600'}`}>
+                           <div className="text-left">
+                              <div className="font-black italic text-white text-sm uppercase">{a.name}</div>
+                              <div className="text-[7px] font-bold text-zinc-500">REQ. LV {a.minLv}</div>
+                           </div>
+                           <ChevronRight size={12}/>
+                        </button>
+                      ))}
+
+                      <div className="pt-3 border-t border-zinc-800/50">
+                        <div className="text-[8px] font-bold text-rose-500 uppercase mb-2 flex items-center gap-1">Epic Raids</div>
+                        {RAIDS.map(r => (
+                          <button key={r.id} disabled={character.level < r.minLv} onClick={() => { setCurrentArea(r); setEnemy({...r.boss, maxHp: r.boss.hp, isBoss: true}); setGameState('BATTLE'); }} className={`w-full p-3 rounded-xl border mb-2 transition-all flex justify-between items-center ${character.level < r.minLv ? 'opacity-30 bg-zinc-950 border-transparent' : 'bg-rose-950/10 border-rose-900/40 hover:bg-rose-900/20'}`}>
+                             <div className="text-left flex items-center gap-2">
+                                <div className="text-rose-500"><Flame size={16}/></div>
+                                <div>
+                                  <div className="font-black italic text-white text-sm uppercase">{r.name}</div>
+                                  <div className="text-[7px] font-bold text-rose-700 uppercase">LV {r.minLv} | {r.reward.toLocaleString()}G</div>
+                                </div>
+                             </div>
+                             <ChevronRight size={12}/>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 p-3 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+                        <div className="flex justify-between items-center mb-2">
+                            <div className="text-[8px] text-zinc-500 font-bold uppercase tracking-tighter">Points: <span className="text-emerald-500">{character.sp}</span></div>
+                            <button onClick={resetStats} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 rounded-md flex items-center gap-1 text-[7px] font-black text-zinc-500">
+                                <RotateCcw size={8}/> RESET
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            {k: 'str', label: 'STR', color: 'text-orange-400'},
+                            {k: 'int', label: 'INT', color: 'text-blue-400'},
+                            {k: 'dex', label: 'DEX', color: 'text-emerald-400'},
+                            {k: 'vit', label: 'VIT', color: 'text-rose-400'}
+                          ].map(s => (
+                            <div key={s.k} className="p-2 bg-black/40 border border-zinc-800/60 rounded-lg flex justify-between items-center">
+                              <div><div className={`text-[7px] font-bold ${s.color} uppercase`}>{s.label}</div><div className="font-black text-white text-xs">{character.stats[s.k]}</div></div>
+                              {character.sp > 0 && <button onClick={() => setCharacter(p => ({...p, sp: p.sp-1, stats: {...p.stats, [s.k]: p.stats[s.k]+1}}))} className="w-5 h-5 flex items-center justify-center bg-white text-black rounded transition"><Plus size={10}/></button>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'INV' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                         <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                            <div className="text-[7px] text-zinc-600 font-bold mb-0.5 uppercase">Weapon</div>
+                            <div className="font-black text-white truncate text-[10px] uppercase italic">{character.equipment.weapon?.name || 'EMPTY'}</div>
+                         </div>
+                         <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                            <div className="text-[7px] text-zinc-600 font-bold mb-0.5 uppercase">Accessory</div>
+                            <div className="font-black text-white truncate text-[10px] uppercase italic">{character.equipment.accessory?.name || 'EMPTY'}</div>
+                         </div>
+                      </div>
+                      <div className="space-y-1.5">
+                         {character.inventory.map((item, i) => (
+                           <div key={i} className="p-2.5 bg-zinc-900/30 border border-zinc-800 rounded-xl flex justify-between items-center">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                 <div className="w-7 h-7 bg-black rounded flex items-center justify-center text-zinc-600 flex-shrink-0">{item.type === 'weapon' ? <Sword size={12}/> : <Gem size={12}/>}</div>
+                                 <div className="text-left overflow-hidden">
+                                    <div className="text-[10px] font-black text-white italic truncate">{item.name}</div>
+                                    <div className="text-[7px] text-emerald-500 font-bold">+{item.val} {item.stat?.toUpperCase() || 'ATK'}</div>
+                                 </div>
+                              </div>
+                              <button onClick={() => setCharacter(p => ({...p, equipment: {...p.equipment, [item.type === 'weapon' ? 'weapon' : 'accessory']: item}}))} className="px-2.5 py-1 bg-zinc-800 text-[8px] font-black rounded hover:bg-white hover:text-black transition flex-shrink-0">EQUIP</button>
+                           </div>
+                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'SHOP' && (
+                    <div className="space-y-3">
+                      <div className="flex bg-zinc-900/60 p-1 rounded-lg border border-zinc-800 flex-shrink-0">
+                        {['WEAPON', 'GENERAL', 'SKILL'].map(cat => (
+                          <button key={cat} onClick={() => setShopCategory(cat)} className={`flex-1 py-1 text-[8px] font-black rounded transition-all ${shopCategory === cat ? 'bg-zinc-800 text-white' : 'text-zinc-600'}`}>
+                            {cat === 'WEAPON' ? '무기' : cat === 'GENERAL' ? '잡화' : '스킬'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {shopCategory === 'WEAPON' && shopWeapons.map((item, i) => (
+                           <button key={i} onClick={() => { if(character.gold >= item.price) { setCharacter(p => ({...p, gold: p.gold - item.price, inventory: [...p.inventory, item]})); addLog(`${item.name} 구매!`, "success"); } }} className="w-full p-2.5 bg-zinc-900/20 border border-zinc-800 rounded-xl flex justify-between items-center">
+                              <div className="text-left">
+                                 <div className={`text-[7px] font-black uppercase ${GRADES[item.grade]?.color}`}>{GRADES[item.grade]?.name}</div>
+                                 <div className="text-[11px] font-black text-white italic truncate max-w-[140px]">{item.name}</div>
+                              </div>
+                              <div className="text-yellow-500 font-black text-[9px]">{item.price.toLocaleString()}G</div>
+                           </button>
+                        ))}
+                        {shopCategory === 'GENERAL' && shopGeneral.map((c, i) => (
+                           <button key={i} onClick={() => { if(character.gold >= c.price) { c.type === 'acc' ? setCharacter(p => ({...p, gold: p.gold - c.price, inventory: [...p.inventory, {...c, grade: 'RARE'}]})) : setCharacter(p => ({...p, gold: p.gold - c.price, consumables: {...p.consumables, [c.id]: p.consumables[c.id]+1}})); addLog(`${c.name} 구매!`, "success"); } }} className="w-full p-2.5 bg-zinc-900/30 border border-zinc-800 rounded-xl flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                 <div className="w-7 h-7 bg-black rounded flex items-center justify-center">{c.type === 'acc' ? <Gem size={12} className="text-emerald-400"/> : <FlaskConical size={12} className="text-rose-400"/>}</div>
+                                 <div className="text-left">
+                                     <div className="text-[10px] font-black text-white">{c.name}</div>
+                                     <div className="text-[7px] text-zinc-500 uppercase">{c.type === 'acc' ? `+${c.val} ${c.stat}` : c.desc}</div>
+                                 </div>
+                              </div>
+                              <div className="text-yellow-500 font-black text-[9px]">{c.price.toLocaleString()}G</div>
+                           </button>
+                        ))}
+                        {shopCategory === 'SKILL' && ALL_SKILLS[character.class]?.map((skill, i) => {
+                          const isLearned = character.skills.some(s => s.id === skill.id);
+                          return (
+                            <button key={i} disabled={isLearned} onClick={() => buySkill(skill)} className={`w-full p-2.5 border rounded-xl flex justify-between items-center transition-all ${isLearned ? 'bg-zinc-950 border-zinc-900 opacity-40 cursor-not-allowed' : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700'}`}>
+                                <div className="flex items-center gap-2 text-left">
+                                    <div className={`p-1.5 rounded-lg ${isLearned ? 'bg-zinc-800' : 'bg-blue-500/10 text-blue-400'}`}><Star size={12}/></div>
+                                    <div>
+                                      <div className="text-[10px] font-black text-white italic uppercase">{skill.name}</div>
+                                      <div className="text-[7px] text-zinc-500 font-bold uppercase">DMG {skill.dmg}x | COST {skill.cost}</div>
+                                    </div>
+                                </div>
+                                <div className={`text-[9px] font-black ${isLearned ? 'text-zinc-600' : 'text-yellow-500'}`}>
+                                  {isLearned ? 'LEARNED' : `${skill.price.toLocaleString()}G`}
+                                </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'SKILL' && (
+                    <div className="space-y-4">
+                       <div className="text-[8px] font-bold text-zinc-600 uppercase mb-2 flex items-center gap-1">Available Skills ({character.skills.length})</div>
+                       <div className="space-y-1.5">
+                          {character.skills.map(s => (
+                             <div key={s.id} className="p-2.5 bg-zinc-900/30 border border-zinc-800 rounded-xl flex justify-between items-center">
+                                <div className="text-left">
+                                   <div className="text-[10px] font-black text-white italic uppercase">{s.name}</div>
+                                   <div className="text-[7px] text-blue-500 font-bold uppercase">DMG {s.dmg}x | COST {s.cost}</div>
+                                </div>
+                                <div className="flex gap-1">
+                                   {[0,1,2,3].map(slot => (
+                                     <button key={slot} onClick={() => setCharacter(p => {
+                                       const newEquip = [...p.equippedSkills];
+                                       newEquip[slot] = s;
+                                       return {...p, equippedSkills: newEquip};
+                                     })} className={`w-6 h-6 rounded flex items-center justify-center text-[7px] font-black border transition-all ${character.equippedSkills[slot]?.id === s.id ? 'bg-blue-600 border-blue-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}`}>
+                                       {slot+1}
+                                     </button>
+                                   ))}
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'LIB' && (
+                    <div className="grid grid-cols-2 gap-2">
+                       {bestiaryData.map((m, i) => (
+                          <div key={i} className={`p-2 bg-zinc-900/30 border border-zinc-800 rounded-lg flex flex-col items-center text-center ${character.bestiary[m.name] ? '' : 'opacity-10 grayscale'}`}>
+                             <div className="text-zinc-600 mb-1">{m.hp > 50000 ? <Skull size={14}/> : <Ghost size={14}/>}</div>
+                             <div className="font-black text-white text-[9px] italic truncate w-full uppercase">{m.name}</div>
+                             <div className="text-[7px] text-emerald-500 font-bold">KILLS: {character.bestiary[m.name] || 0}</div>
+                          </div>
+                       ))}
+                    </div>
+                  )}
+
+                  {activeTab === 'ADMIN' && (
+                    <div className="space-y-2 p-2 bg-rose-500/5 rounded-xl border border-rose-500/20 relative">
+                       <div className="flex justify-between items-center mb-2">
+                          <div className="text-rose-500 font-black italic text-[10px] uppercase tracking-tighter">Debug Panel</div>
+                          <button 
+                             onClick={() => { setAdminVisible(false); setActiveTab('MAIN'); }} 
+                             className="p-1 hover:bg-rose-500/20 rounded-md text-rose-500 transition-colors"
+                          >
+                             <X size={14} />
+                          </button>
+                       </div>
+                       <button onClick={() => setCharacter(p => ({...p, level: Math.min(200, p.level + 20), sp: p.sp+50}))} className="w-full p-2 bg-zinc-900 rounded border border-zinc-800 text-[8px] font-black">LV+20 / SP+50</button>
+                       <button onClick={() => setCharacter(p => ({...p, level: 200}))} className="w-full p-2 bg-rose-900/20 rounded border border-rose-800 text-[8px] font-black text-rose-500">SET LEVEL 200 (REBIRTH TEST)</button>
+                       <button onClick={() => setCharacter(p => ({...p, gold: p.gold+100000}))} className="w-full p-2 bg-zinc-900 rounded border border-zinc-800 text-[8px] font-black">GOLD +100K</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 하단 내 정보 요약 바 */}
+                <div className="absolute bottom-3 left-3 right-3 p-3 bg-black/60 border border-zinc-800/80 rounded-2xl backdrop-blur-xl flex-shrink-0 z-[100]">
+                   <div className="flex justify-between items-center mb-1.5 px-0.5">
+                      <div className="text-[9px] font-black italic text-zinc-400 flex items-center gap-1.5 uppercase"><UserSquare2 size={10}/> {character.class}</div>
+                      <div className="text-[7px] font-black text-zinc-600">EXP {Math.floor((character.exp/character.maxExp)*100)}%</div>
+                   </div>
+                   <div className="space-y-1.5">
+                    <ProgressBar label="HP" val={character.hp} max={derivedStats.maxHp} color="bg-rose-500" />
+                    <ProgressBar label="MP" val={character.mp} max={derivedStats.maxMp} color="bg-blue-500" />
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {gameState === 'BATTLE' && enemy && (
+              <div className="flex-1 flex flex-col min-h-0 bg-black relative">
+                
+                {/* 전투 정보 상단 */}
+                <div className="p-4 flex flex-col items-center flex-shrink-0 z-[60]">
+                   <div className="text-[7px] font-black text-zinc-600 tracking-[0.3em] uppercase mb-1">
+                     {currentArea?.type === 'RAID' ? 'ULTIMATE BOSS RAID' : `DUNGEON STAGE ${dungeonProgress}/10`}
+                   </div>
+                   <h2 className={`text-xl font-black italic text-white uppercase tracking-tighter text-center ${currentArea?.type === 'RAID' ? 'text-rose-500' : ''}`}>{enemy.name}</h2>
+                </div>
+
+                {/* 몬스터 시각화 영역 */}
+                <div className="flex-1 flex flex-col items-center justify-center relative min-h-0">
+                    <div className="absolute top-0 left-0 right-0 z-[70] flex flex-col items-center pointer-events-none">
+                        {combatLogs.map(log => (
+                            <div key={log.id} className={`${log.color} font-black animate-combat-log drop-shadow-2xl`}>
+                                {log.text}
+                            </div>
+                        ))}
+                    </div>
+                    <div className={`w-28 h-28 rounded-[2rem] flex items-center justify-center relative transition-all duration-300 ${enemy.isBoss ? 'bg-rose-950/20 border border-rose-500/40 shadow-[0_0_40px_rgba(244,63,94,0.1)] animate-pulse' : 'bg-zinc-900/40 border border-zinc-800'}`}>
+                        {enemy.isBoss ? <Skull size={40} className="text-rose-500 animate-bounce"/> : <Ghost size={32} className="text-zinc-700"/>}
+                    </div>
+                    <div className="w-full max-w-[160px] mt-6">
+                        <ProgressBar label="MONSTER" val={enemy.hp} max={enemy.maxHp} color={currentArea?.type === 'RAID' ? 'bg-orange-600' : 'bg-rose-600'} height="h-2" />
+                    </div>
+                </div>
+
+                {/* 하단 전투 조작 패널 */}
+                <div className="bg-[#0a0a0a] p-4 rounded-t-[2rem] border-t border-zinc-800/80 shadow-[0_-15px_30px_rgba(0,0,0,0.8)] z-[100] flex-shrink-0">
+                   <div className="grid grid-cols-2 gap-3 mb-3">
+                      <ProgressBar label="MY HP" val={character.hp} max={derivedStats.maxHp} color="bg-rose-500" height="h-2" />
+                      <ProgressBar label="MY MP" val={character.mp} max={derivedStats.maxMp} color="bg-blue-500" height="h-2" />
+                   </div>
+                   
+                   <div className="grid grid-cols-4 gap-1.5 mb-3">
+                      {['p_hp', 'p_mp', 'p_hp_lg', 'p_mp_lg'].map(id => (
+                        <button key={id} onClick={() => usePotion(id)} className="flex flex-col items-center py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg active:scale-90 transition">
+                            <FlaskConical size={12} className={id.includes('hp') ? 'text-rose-500' : 'text-blue-500'}/>
+                            <span className="text-[8px] font-black mt-0.5 text-zinc-500">{character.consumables[id]}</span>
+                        </button>
+                      ))}
+                   </div>
+
+                   <div className="grid grid-cols-4 gap-1.5 mb-3">
+                      {character.equippedSkills.map((s, i) => (
+                        <button key={i} disabled={!s || character.mp < s.cost} onClick={() => handleCombat(i)} className={`h-10 rounded-lg flex flex-col items-center justify-center border transition-all ${s ? 'bg-zinc-800 border-zinc-600 text-blue-400' : 'bg-black border-zinc-900 opacity-20'}`}>
+                           {s ? <Zap size={12}/> : <ZapOff size={12}/>}
+                           {s && <span className="text-[7px] font-black text-blue-300/60 uppercase">-{s.cost}</span>}
+                        </button>
+                      ))}
+                   </div>
+
+                   <div className="flex gap-2">
+                      <button onClick={() => handleCombat()} className="flex-[4] h-12 bg-white text-black font-black italic text-lg rounded-xl active:scale-95 transition-all shadow-xl shadow-white/5">ATTACK</button>
+                      <button onClick={handleRetreat} className="flex-1 h-12 bg-rose-950/20 border border-rose-900/40 rounded-xl flex items-center justify-center text-rose-500 active:scale-90 transition-all">
+                        <X size={20}/>
+                      </button>
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 유동 로그 레이어 */}
+            <div className="absolute top-2 left-4 pointer-events-none select-none z-[200]">
+               {logs.map(log => (
+                 <div key={log.id} className={`text-[8px] font-bold animate-fade-out italic uppercase tracking-tighter ${log.type === 'error' ? 'text-rose-500' : log.type === 'success' ? 'text-emerald-500' : 'text-white/40'}`}>
+                    {log.text}
+                 </div>
+               ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 2px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #18181b; border-radius: 10px; }
+        @keyframes fade-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+        .animate-fade-out { animation: fade-out 2s forwards; }
+        @keyframes combat-log { 
+            0% { opacity: 0; transform: translateY(10px) scale(0.8); } 
+            20% { opacity: 1; transform: translateY(0) scale(1.1); } 
+            80% { opacity: 1; transform: translateY(-5px) scale(1); }
+            100% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+        }
+        .animate-combat-log { animation: combat-log 1s ease-out forwards; }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
